@@ -116,7 +116,11 @@ impl App {
     }
 
     pub fn navigate_bottom(&mut self) {
-        self.todo_list_state.select(Some(self.todo.len() - 1));
+        let next_selected = match self.todo.len() {
+            0 => None,
+            n => Some(n - 1),
+        };
+        self.todo_list_state.select(next_selected);
     }
 
     pub fn toggle_help(&mut self) {
