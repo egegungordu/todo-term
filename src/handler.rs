@@ -6,6 +6,7 @@ macro_rules! n_key_press {
         (KeyEvent {
             code: $code,
             kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
             ..
         }, AppMode::Normal)
     };
