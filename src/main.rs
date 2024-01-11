@@ -30,7 +30,7 @@ fn main() -> AppResult<()> {
                 key_sequencer.tick();
             }
             Event::Key(key_event) => match (app.get_mode(), key_sequencer.feed(key_event)) {
-                (AppMode::Normal, Some(key_sequence_event)) => {
+                (AppMode::Visual, Some(key_sequence_event)) => {
                     handle_normal_mode_sequence_key_events(key_sequence_event, &mut app)?;
                 }
                 _ => {

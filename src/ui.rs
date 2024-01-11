@@ -9,7 +9,7 @@ use ratatui::{
     },
     widgets::{
         calendar::CalendarEventStore, calendar::Monthly, Block, BorderType, Borders, Clear, List,
-        ListItem, Padding, Paragraph,
+        ListItem, Padding, Paragraph, HighlightSpacing,
     },
     Frame,
 };
@@ -259,7 +259,8 @@ fn draw_list(f: &mut Frame, app: &mut App, area: Rect) {
                 .title_style(Style::default().fg(Color::White))
                 .padding(Padding::horizontal(1)),
         )
-        .highlight_symbol(highlight_symbol);
+        .highlight_symbol(highlight_symbol)
+        .highlight_spacing(HighlightSpacing::Always);
 
     f.render_stateful_widget(list, area, &mut app.get_todo_list_state());
 }
