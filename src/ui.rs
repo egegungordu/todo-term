@@ -1,3 +1,4 @@
+use rand::seq::SliceRandom;
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     prelude::*,
@@ -114,6 +115,7 @@ fn centered_rect_length(width: u16, height: u16, r: Rect) -> Rect {
     if r.width < width || r.height < height {
         return r;
     }
+
 
     let popup_layout = Layout::new()
         .direction(Direction::Vertical)
@@ -262,6 +264,26 @@ fn draw_list(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_stateful_widget(list, area, &mut app.get_todo_list_state());
 }
 
+// create a list of faces (3 characers wide)
+const FACES: &[&str] = &[
+    "(^-^)",
+    "(·∀·)",
+    "(≧ω≦)",
+    "(^O^)",
+    "(^Д^)",
+    "(≧∇≦)",
+    "(^_^)",
+    "(^o^)",
+    "(≧◡≦)"
+];
+
+fn get_random_face() -> String {
+    // use pid to get a different face each time
+    let pid = std::process::id() as usize;
+    let index = pid % FACES.len();
+    FACES[index].to_string()
+}
+
 fn draw_empty_list(f: &mut Frame, area: Rect) {
     let text = vec![
         "No tasks for today! 🎉",
@@ -281,7 +303,7 @@ fn draw_empty_list(f: &mut Frame, area: Rect) {
                 .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM)
                 .border_type(BorderType::Rounded)
                 .border_style(Style::default().fg(Color::DarkGray))
-                .title(format!("Tasks (o_o)"))
+                .title(format!("Tasks {}", get_random_face()))
                 .title_style(Style::default().fg(Color::White))
                 .padding(Padding::uniform(1)),
         )
