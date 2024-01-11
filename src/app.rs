@@ -2,7 +2,9 @@ use std::error;
 
 use ratatui::widgets::ListState;
 
-use crate::todo::Todo;
+use crate::{action_display::ActionDisplay, todo::Todo};
+
+use std::fmt;
 
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
@@ -12,12 +14,22 @@ pub enum AppMode {
     Insert,
 }
 
+impl fmt::Display for AppMode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+       match self {
+           AppMode::Normal => write!(f, "Normal"),
+           AppMode::Insert => write!(f, "Insert"),
+       }
+    }
+}
+
 pub struct App {
     running: bool,
     show_help: bool,
     todo: Todo,
+    action_display: ActionDisplay,
     todo_list_state: ListState,
-    yank_buffer: String,
+    yank_buffer: Option<String>,
     mode: AppMode,
 }
 
@@ -27,8 +39,9 @@ impl Default for App {
             running: true,
             show_help: false,
             todo: Todo::new(),
+            action_display: ActionDisplay::new(),
             todo_list_state: ListState::default(),
-            yank_buffer: String::new(),
+            yank_buffer: None,
             mode: AppMode::Normal,
         }
     }
@@ -39,13 +52,17 @@ impl App {
         Self::default()
     }
 
-    pub fn tick(&self) {}
+    pub fn tick(&mut self) {
+        self.action_display.tick();
+    }
 
     pub fn quit(&mut self) {
         self.running = false;
     }
 
     pub fn add_task_above(&mut self) {
+        self.action_display.set("Added task above");
+
         let new_task_index = {
             if self.todo.is_empty() {
                 0
@@ -61,6 +78,8 @@ impl App {
     }
 
     pub fn add_task_below(&mut self) {
+        self.action_display.set("Added task below");
+
         let new_task_index = {
             if self.todo.is_empty() {
                 0
@@ -76,6 +95,8 @@ impl App {
     }
 
     pub fn delete_task(&mut self) {
+        self.action_display.set("Deleted task");
+
         if self.todo.is_empty() {
             return;
         }
@@ -93,6 +114,8 @@ impl App {
     }
 
     pub fn exit_insert_mode(&mut self) {
+        self.action_display.set("Saving task");
+
         self.mode = AppMode::Normal;
     }
 
@@ -135,6 +158,8 @@ impl App {
     }
 
     pub fn toggle_task(&mut self) {
+        self.action_display.set("Toggled task");
+
         match self.todo_list_state.selected() {
             Some(i) => {
                 self.todo.toggle_task(i);
@@ -144,6 +169,8 @@ impl App {
     }
 
     pub fn yank_task(&mut self) {
+        self.action_display.set("Yanked task");
+
         if let Some(i) = self.todo_list_state.selected() {
             let task = if i < self.todo.get_incomplete_tasks().len() {
                 self.todo.get_incomplete_tasks()[i].clone()
@@ -151,11 +178,17 @@ impl App {
                 self.todo.get_complete_tasks()[i - self.todo.get_incomplete_tasks().len()].clone()
             };
 
-            self.yank_buffer = task;
+            self.yank_buffer = Some(task);
         }
     }
 
     pub fn paste_task_above(&mut self) {
+        self.action_display.set("Pasted task above");
+
+        if self.yank_buffer.is_none() {
+            return;
+        }
+
         let new_task_index = {
             if self.todo.is_empty() {
                 0
@@ -167,11 +200,14 @@ impl App {
             }
         };
         self.todo_list_state.select(Some(new_task_index));
-        self.todo.add_task(new_task_index, self.yank_buffer.clone());
+        self.todo
+            .add_task(new_task_index, self.yank_buffer.clone().unwrap());
     }
 
     pub fn paste_task_below(&mut self) {
-        if self.yank_buffer.is_empty() {
+        self.action_display.set("Pasted task below");
+
+        if self.yank_buffer.is_none() {
             return;
         }
 
@@ -186,7 +222,8 @@ impl App {
             }
         };
         self.todo_list_state.select(Some(new_task_index));
-        self.todo.add_task(new_task_index, self.yank_buffer.clone());
+        self.todo
+            .add_task(new_task_index, self.yank_buffer.clone().unwrap());
     }
 
     pub fn navigate_down(&mut self) {
@@ -245,6 +282,10 @@ impl App {
 
     pub fn get_mode(&self) -> AppMode {
         self.mode
+    }
+
+    pub fn get_action(&self) -> &str {
+        self.action_display.get()
     }
 
     fn select_last_task(&mut self) {

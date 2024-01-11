@@ -34,6 +34,10 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     let content_area = main_areas[0];
     let sidebar_area = main_areas[1];
     let help_popup_area = centered_rect_length(32, 20, content_area);
+    let footer_area = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(1)])
+        .split(content_area)[1];
 
     draw_header(frame, header_area);
     draw_calendar(frame, sidebar_area);
@@ -44,9 +48,36 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         draw_list(frame, app, content_area);
     }
 
+    draw_footer(frame, app, footer_area);
+
     if app.is_help_visible() {
         draw_help_popup(frame, help_popup_area);
     }
+}
+
+fn draw_footer(f: &mut Frame, app: &mut App, area: Rect) {
+    let footer_areas = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Min(10), Constraint::Min(10)])
+        .split(area);
+
+    let footer_left = footer_areas[0];
+    let footer_right = footer_areas[1];
+
+    let action_display = Paragraph::new(app.get_action())
+        .alignment(Alignment::Right)
+        .style(Style::default());
+
+    let mode_display = Paragraph::new(app.get_mode().to_string())
+        .alignment(Alignment::Left)
+        .block(
+            Block::default()
+                .padding(Padding::horizontal(1))
+        )
+        .style(Style::default());
+
+    f.render_widget(mode_display, footer_left);
+    f.render_widget(action_display, footer_right);
 }
 
 fn draw_help_popup(f: &mut Frame, area: Rect) {
@@ -80,6 +111,10 @@ fn draw_help_popup(f: &mut Frame, area: Rect) {
 }
 
 fn centered_rect_length(width: u16, height: u16, r: Rect) -> Rect {
+    if r.width < width || r.height < height {
+        return r;
+    }
+
     let popup_layout = Layout::new()
         .direction(Direction::Vertical)
         .constraints([
