@@ -2,7 +2,7 @@ use std::error;
 
 use ratatui::widgets::ListState;
 
-use crate::{action_display::ActionDisplay, todo::Todo};
+use crate::{action_display::ActionDisplay, todo::Todo, todo_serializer::JsonSerializer};
 
 use std::fmt;
 
@@ -16,10 +16,10 @@ pub enum AppMode {
 
 impl fmt::Display for AppMode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-       match self {
-           AppMode::Normal => write!(f, "Normal"),
-           AppMode::Insert => write!(f, "Insert"),
-       }
+        match self {
+            AppMode::Normal => write!(f, "Normal"),
+            AppMode::Insert => write!(f, "Insert"),
+        }
     }
 }
 
@@ -35,12 +35,21 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
+        let mut action_display = ActionDisplay::new();
+        let mut todo_list_state = ListState::default();
+        let mut todo =
+            Todo::with_serializer(Box::new(JsonSerializer::new("todo.json".to_string())));
+        if let Err(e) = todo.load() {
+            action_display.set(&format!("Error loading todo: {}", e));
+        } else {
+            todo_list_state.select(Some(0));
+        }
         Self {
             running: true,
             show_help: false,
-            todo: Todo::new(),
-            action_display: ActionDisplay::new(),
-            todo_list_state: ListState::default(),
+            todo,
+            action_display,
+            todo_list_state,
             yank_buffer: None,
             mode: AppMode::Normal,
         }
@@ -114,7 +123,7 @@ impl App {
     }
 
     pub fn exit_insert_mode(&mut self) {
-        self.action_display.set("Saving task");
+        self.action_display.set("Saving todo");
 
         self.mode = AppMode::Normal;
     }
@@ -286,6 +295,12 @@ impl App {
 
     pub fn get_action(&self) -> &str {
         self.action_display.get()
+    }
+
+    pub fn save(&mut self) {
+        if let Err(e) = self.todo.save() {
+            self.action_display.set(&format!("Error saving todo: {}", e));
+        }
     }
 
     fn select_last_task(&mut self) {

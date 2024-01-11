@@ -87,12 +87,14 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         }
         n_key_press!(KeyCode::Char('x')) => {
             app.toggle_task();
+            app.save();
         }
         n_key_press!(KeyCode::Char('G'), KeyModifiers::SHIFT) => {
             app.navigate_bottom();
         }
         n_key_press!(KeyCode::Char('d')) => {
             app.delete_task();
+            app.save();
         }
         n_key_press!(KeyCode::Char('c')) => {
             app.reset_task();
@@ -106,15 +108,19 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         }
         n_key_press!(KeyCode::Char('p')) => {
             app.paste_task_below();
+            app.save();
         }
         n_key_press!(KeyCode::Char('P'), KeyModifiers::SHIFT) => {
             app.paste_task_above();
+            app.save();
         }
         i_key_press!(KeyCode::Char('c') | KeyCode::Char('C'), KeyModifiers::CONTROL) => {
             app.exit_insert_mode();
+            app.save();
         }
         i_key_press!(KeyCode::Esc) => {
             app.exit_insert_mode();
+            app.save();
         }
         i_key_press!(KeyCode::Char(c)) => {
             app.append_to_task(c);
