@@ -10,14 +10,14 @@ pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum AppMode {
-    Normal,
+    Visual,
     Insert,
 }
 
 impl fmt::Display for AppMode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AppMode::Normal => write!(f, "Normal"),
+            AppMode::Visual => write!(f, "Visual"),
             AppMode::Insert => write!(f, "Insert"),
         }
     }
@@ -51,7 +51,7 @@ impl Default for App {
             action_display,
             todo_list_state,
             yank_buffer: None,
-            mode: AppMode::Normal,
+            mode: AppMode::Visual,
         }
     }
 }
@@ -125,7 +125,7 @@ impl App {
     pub fn exit_insert_mode(&mut self) {
         self.action_display.set("Saving todo");
 
-        self.mode = AppMode::Normal;
+        self.mode = AppMode::Visual;
     }
 
     pub fn append_to_task(&mut self, c: char) {
@@ -299,7 +299,8 @@ impl App {
 
     pub fn save(&mut self) {
         if let Err(e) = self.todo.save() {
-            self.action_display.set(&format!("Error saving todo: {}", e));
+            self.action_display
+                .set(&format!("Error saving todo: {}", e));
         }
     }
 

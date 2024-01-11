@@ -8,7 +8,7 @@ macro_rules! n_key_press {
             kind: KeyEventKind::Press,
             modifiers: KeyModifiers::NONE,
             ..
-        }, AppMode::Normal)
+        }, AppMode::Visual)
     };
     ($code:pat, $modifiers:pat) => {
         (KeyEvent {
@@ -16,7 +16,7 @@ macro_rules! n_key_press {
             kind: KeyEventKind::Press,
             modifiers: $modifiers,
             ..
-        }, AppMode::Normal)
+        }, AppMode::Visual)
     };
 }
 
