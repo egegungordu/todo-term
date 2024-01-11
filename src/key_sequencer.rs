@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crossterm::event::{KeyEvent, KeyEventKind, KeyEventState};
+use crossterm::event::{KeyEvent, KeyEventKind};
 
 trait KeySequencerFilter {
     fn filter(&self, key_event: KeyEvent) -> Option<KeyEvent>;

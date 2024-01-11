@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent};
+
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use std::io;

@@ -1,4 +1,4 @@
-use rand::seq::SliceRandom;
+
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     prelude::*,
