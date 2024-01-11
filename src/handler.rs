@@ -1,31 +1,45 @@
-use crate::{app::{App, AppResult}, key_sequencer::KeySequencer};
+use crate::{app::{App, AppResult, AppMode}, key_sequencer::KeySequencer};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
-// create macro for press key event
-// accept code only
-macro_rules! key_press {
+macro_rules! n_key_press {
     ($code:pat) => {
-        KeyEvent {
+        (KeyEvent {
             code: $code,
             kind: KeyEventKind::Press,
             ..
-        }
+        }, AppMode::Normal)
     };
     ($code:pat, $modifiers:pat) => {
-        KeyEvent {
+        (KeyEvent {
             code: $code,
             kind: KeyEventKind::Press,
             modifiers: $modifiers,
             ..
-        }
+        }, AppMode::Normal)
+    };
+}
+
+macro_rules! i_key_press {
+    ($code:pat) => {
+        (KeyEvent {
+            code: $code,
+            kind: KeyEventKind::Press,
+            ..
+        }, AppMode::Insert)
+    };
+    ($code:pat, $modifiers:pat) => {
+        (KeyEvent {
+            code: $code,
+            kind: KeyEventKind::Press,
+            modifiers: $modifiers,
+            ..
+        }, AppMode::Insert)
     };
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum KeySequenceEvent {
-    Delete,
     NavigateTop,
-    Change,
 }
 
 pub fn setup_key_sequences(key_sequencer: &mut KeySequencer<KeySequenceEvent>) {
@@ -36,55 +50,76 @@ pub fn setup_key_sequences(key_sequencer: &mut KeySequencer<KeySequenceEvent>) {
     );
 }
 
-pub fn handle_key_sequence_events(key_sequence_event: KeySequenceEvent, app: &mut App) -> AppResult<()> {
-    match key_sequence_event {
-        KeySequenceEvent::Delete => {
-            app.delete_task();
-        }
-        KeySequenceEvent::NavigateTop => {
+pub fn handle_normal_mode_sequence_key_events(key_sequence_event: KeySequenceEvent, app: &mut App) -> AppResult<()> {
+    match key_sequence_event{
+        KeySequenceEvent::NavigateTop=> {
             app.navigate_top();
-        }
-        KeySequenceEvent::Change => {
-            app.change_task();
         }
     }
     Ok(())
 }
 
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
-    match key_event {
-        key_press!(KeyCode::Esc | KeyCode::Char('q')) => {
+    match (key_event, app.get_mode()) {
+        n_key_press!(KeyCode::Char('c') | KeyCode::Char('C'), KeyModifiers::CONTROL) => {
             app.quit();
         }
-        key_press!(KeyCode::Char('c') | KeyCode::Char('C'), KeyModifiers::CONTROL) => {
+        n_key_press!(KeyCode::Esc | KeyCode::Char('q')) => {
             app.quit();
         }
-        key_press!(KeyCode::Char('j')) => {
+        n_key_press!(KeyCode::Char('j')) => {
             app.navigate_down();
         }
-        key_press!(KeyCode::Char('k')) => {
+        n_key_press!(KeyCode::Char('k')) => {
             app.navigate_up();
         }
-        key_press!(KeyCode::Char('h')) => {
+        n_key_press!(KeyCode::Char('h')) => {
             app.toggle_help();
         }
-        key_press!(KeyCode::Char('o')) => {
+        n_key_press!(KeyCode::Char('o')) => {
             app.add_task_below();
+            app.enter_insert_mode();
         }
-        key_press!(KeyCode::Char('O')) => {
+        n_key_press!(KeyCode::Char('O')) => {
             app.add_task_above();
+            app.enter_insert_mode();
         }
-        key_press!(KeyCode::Char('x')) => {
+        n_key_press!(KeyCode::Char('x')) => {
             app.toggle_task();
         }
-        key_press!(KeyCode::Char('G')) => {
+        n_key_press!(KeyCode::Char('G')) => {
             app.navigate_bottom();
         }
-        key_press!(KeyCode::Char('d')) => {
+        n_key_press!(KeyCode::Char('d')) => {
             app.delete_task();
         }
-        key_press!(KeyCode::Char('c')) => {
-            app.change_task();
+        n_key_press!(KeyCode::Char('c')) => {
+            app.reset_task();
+            app.enter_insert_mode();
+        }
+        n_key_press!(KeyCode::Char('a')) => {
+            app.enter_insert_mode();
+        }
+        n_key_press!(KeyCode::Char('y')) => {
+            app.yank_task();
+        }
+        n_key_press!(KeyCode::Char('p')) => {
+            app.paste_task_below();
+        }
+        n_key_press!(KeyCode::Char('P')) => {
+            app.paste_task_above();
+        }
+        i_key_press!(KeyCode::Char('c') | KeyCode::Char('C'), KeyModifiers::CONTROL) => {
+            app.exit_insert_mode();
+        }
+        i_key_press!(KeyCode::Esc) => {
+            app.exit_insert_mode();
+        }
+        i_key_press!(KeyCode::Char(c)) => {
+            app.append_to_task(c);
+        }
+        i_key_press!(KeyCode::Backspace) => {
+            app.pop_from_task();
         }
         _ => {}
     }

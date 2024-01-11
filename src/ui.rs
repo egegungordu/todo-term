@@ -13,7 +13,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::App;
+use crate::app::{App, AppMode};
 
 use time::OffsetDateTime;
 
@@ -51,14 +51,18 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
 fn draw_help_popup(f: &mut Frame, area: Rect) {
     let help_text = vec![
-        "Toggle help - h",
-        "Quit        - q, Ctrl-C, Esc",
-        "Navigate    - j, k",
-        "",
-        "Add task    - o",
-        "Delete task - Shift-D",
-        "Change task - Shift-C",
-        "Toggle task - x",
+        "Toggle help    - h",
+        "Quit           - q, Ctrl-C,",
+        "                 Esc",
+        "Exit insert    - Ctrl-C, End",
+        "Navigate       - j, k, g, G",
+        "Add task       - o, O",
+        "Toggle task    - x",
+        "Delete task    - d",
+        "Change task    - c",
+        "Append to task - a",
+        "Yank task      - y",
+        "Paste task     - p, P",
     ];
 
     let help = Paragraph::new(help_text.join("\n")).block(
@@ -133,16 +137,61 @@ fn draw_header(f: &mut Frame, area: Rect) {
 }
 
 fn draw_list(f: &mut Frame, app: &mut App, area: Rect) {
+    let selected = app.get_todo_list_state().selected().unwrap_or(usize::MAX);
+    let app_mode = app.get_mode();
+
     let incomplete_tasks = app
         .get_incomplete_tasks()
         .iter()
-        .map(|i| ListItem::new(format!("[ ] {}", i)).style(Style::default().fg(Color::Rgb(200, 200, 200))))
+        .enumerate()
+        .map(|(index, task)| {
+            let bullet = "[ ] ".fg(Color::Rgb(200, 200, 200));
+            let line = match (index == selected, app_mode) {
+                // selected and insert mode
+                (true, AppMode::Insert) => vec![
+                    bullet,
+                    task.clone().fg(Color::White).bg(Color::Rgb(60, 60, 60)),
+                    "█".fg(Color::White),
+                    " ".repeat(area.width as usize).bg(Color::Rgb(60, 60, 60)),
+                ],
+                // selected
+                (true, _) => vec![
+                    bullet.fg(Color::White),
+                    task.clone().fg(Color::White).bg(Color::Rgb(60, 60, 60)),
+                ],
+                // not selected
+                _ => vec![bullet, task.clone().fg(Color::Rgb(200, 200, 200))],
+            };
+            ListItem::new(Line::from(line))
+        })
         .collect::<Vec<_>>();
+
+    let incomplete_tasks_len = incomplete_tasks.len();
 
     let complete_tasks = app
         .get_complete_tasks()
         .iter()
-        .map(|i| ListItem::new(format!("[x] {}", i)).style(Style::default().fg(Color::DarkGray)))
+        .enumerate()
+        .map(|(index, task)| {
+            let bullet = "[x] ".fg(Color::DarkGray);
+            let line = match (index + incomplete_tasks_len == selected, app_mode) {
+                // selected and insert mode
+                (true, AppMode::Insert) => vec![
+                    bullet,
+                    task.clone().fg(Color::White).bg(Color::Rgb(60, 60, 60)),
+                    "█".fg(Color::White),
+                    " ".repeat(area.width as usize).bg(Color::Rgb(60, 60, 60)),
+                ],
+                // selected
+                (true, _) => vec![
+                    bullet.fg(Color::White),
+                    task.clone().fg(Color::White).bg(Color::Rgb(60, 60, 60)),
+                ],
+                // not selected
+                _ => vec![bullet, task.clone().fg(Color::DarkGray)],
+            };
+            ListItem::new(Line::from(line))
+        })
         .collect::<Vec<_>>();
 
     let all_tasks = incomplete_tasks
@@ -152,6 +201,11 @@ fn draw_list(f: &mut Frame, app: &mut App, area: Rect) {
         .collect::<Vec<_>>();
 
     let all_tasks_len = all_tasks.len();
+
+    let highlight_symbol = match app_mode {
+        AppMode::Insert => ">>",
+        _ => "> ",
+    };
 
     let list = List::new(all_tasks)
         .block(
@@ -164,14 +218,11 @@ fn draw_list(f: &mut Frame, app: &mut App, area: Rect) {
                     complete_tasks.len(),
                     all_tasks_len
                 ))
+                .fg(Color::Rgb(100, 200, 228))
                 .title_style(Style::default().fg(Color::White))
                 .padding(Padding::horizontal(1)),
         )
-        .highlight_style(
-            Style::default()
-                .bg(Color::Rgb(60, 60, 60))
-                .fg(Color::White),
-        );
+        .highlight_symbol(highlight_symbol);
 
     f.render_stateful_widget(list, area, &mut app.get_todo_list_state());
 }
@@ -183,6 +234,9 @@ fn draw_empty_list(f: &mut Frame, area: Rect) {
         "Add one by pressing 'o'.",
         "",
         "Press 'h' to toggle help.",
+        "",
+        "Contributions are welcome!",
+        "https://github.com/egegungordu/todo-term",
     ];
 
     let paragraph = Paragraph::new(text.join("\n"))

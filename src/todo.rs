@@ -13,13 +13,16 @@ impl Todo {
 
     pub fn add_task(&mut self, index: usize, task: String) {
         assert!(index <= self.incomplete_tasks.len());
+
         self.incomplete_tasks.insert(index, task);
     }
 
     pub fn toggle_task(&mut self, index: usize) {
+        assert!(index < self.len());
+
         if index < self.incomplete_tasks.len() {
             let task = self.incomplete_tasks.remove(index);
-            self.complete_tasks.push(task);
+            self.complete_tasks.insert(0, task);
         } else {
             let task = self.complete_tasks.remove(index - self.incomplete_tasks.len());
             self.incomplete_tasks.push(task);
@@ -40,6 +43,16 @@ impl Todo {
 
     pub fn get_incomplete_tasks(&self) -> &Vec<String> {
         &self.incomplete_tasks
+    }
+
+    pub fn edit_task(&mut self, index: usize, task: String) {
+        assert!(index < self.len());
+
+        if index < self.incomplete_tasks.len() {
+            self.incomplete_tasks[index] = task;
+        } else {
+            self.complete_tasks[index - self.incomplete_tasks.len()] = task;
+        }
     }
 
     pub fn len(&self) -> usize {

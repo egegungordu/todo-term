@@ -6,11 +6,19 @@ use crate::todo::Todo;
 
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum AppMode {
+    Normal,
+    Insert,
+}
+
 pub struct App {
     running: bool,
     show_help: bool,
     todo: Todo,
     todo_list_state: ListState,
+    yank_buffer: String,
+    mode: AppMode,
 }
 
 impl Default for App {
@@ -20,6 +28,8 @@ impl Default for App {
             show_help: false,
             todo: Todo::new(),
             todo_list_state: ListState::default(),
+            yank_buffer: String::new(),
+            mode: AppMode::Normal,
         }
     }
 }
@@ -47,10 +57,7 @@ impl App {
             }
         };
         self.todo_list_state.select(Some(new_task_index));
-        self.todo.add_task(
-            new_task_index,
-            String::from(format!("Task {}", new_task_index)),
-        );
+        self.todo.add_task(new_task_index, "".to_string());
     }
 
     pub fn add_task_below(&mut self) {
@@ -65,10 +72,7 @@ impl App {
             }
         };
         self.todo_list_state.select(Some(new_task_index));
-        self.todo.add_task(
-            new_task_index,
-            String::from(format!("Task {}", new_task_index)),
-        );
+        self.todo.add_task(new_task_index, "".to_string());
     }
 
     pub fn delete_task(&mut self) {
@@ -84,8 +88,50 @@ impl App {
         }
     }
 
-    pub fn change_task(&mut self) {
-        todo!();
+    pub fn enter_insert_mode(&mut self) {
+        self.mode = AppMode::Insert;
+    }
+
+    pub fn exit_insert_mode(&mut self) {
+        self.mode = AppMode::Normal;
+    }
+
+    pub fn append_to_task(&mut self, c: char) {
+        if let Some(i) = self.todo_list_state.selected() {
+            let task = if i < self.todo.get_incomplete_tasks().len() {
+                self.todo.get_incomplete_tasks()[i].clone()
+            } else {
+                self.todo.get_complete_tasks()[i - self.todo.get_incomplete_tasks().len()].clone()
+            };
+
+            let new_task = format!("{}{}", task, c);
+
+            self.todo.edit_task(i, new_task);
+        }
+    }
+
+    pub fn pop_from_task(&mut self) {
+        if let Some(i) = self.todo_list_state.selected() {
+            let task = if i < self.todo.get_incomplete_tasks().len() {
+                self.todo.get_incomplete_tasks()[i].clone()
+            } else {
+                self.todo.get_complete_tasks()[i - self.todo.get_incomplete_tasks().len()].clone()
+            };
+
+            let new_task = if task.len() > 0 {
+                task[..task.len() - 1].to_string()
+            } else {
+                task
+            };
+
+            self.todo.edit_task(i, new_task);
+        }
+    }
+
+    pub fn reset_task(&mut self) {
+        if let Some(i) = self.todo_list_state.selected() {
+            self.todo.edit_task(i, "".to_string());
+        }
     }
 
     pub fn toggle_task(&mut self) {
@@ -95,6 +141,56 @@ impl App {
             }
             None => {}
         }
+    }
+
+    pub fn yank_task(&mut self) {
+        if let Some(i) = self.todo_list_state.selected() {
+            let task = if i < self.todo.get_incomplete_tasks().len() {
+                self.todo.get_incomplete_tasks()[i].clone()
+            } else {
+                self.todo.get_complete_tasks()[i - self.todo.get_incomplete_tasks().len()].clone()
+            };
+
+            self.yank_buffer = task;
+        }
+    }
+
+    pub fn paste_task_above(&mut self) {
+        if self.yank_buffer.is_empty() {
+            return;
+        }
+
+        let new_task_index = {
+            if self.todo.is_empty() {
+                0
+            } else {
+                match self.todo_list_state.selected() {
+                    Some(i) => std::cmp::min(i, self.todo.get_incomplete_tasks().len()),
+                    None => 0,
+                }
+            }
+        };
+        self.todo_list_state.select(Some(new_task_index));
+        self.todo.add_task(new_task_index, self.yank_buffer.clone());
+    }
+
+    pub fn paste_task_below(&mut self) {
+        if self.yank_buffer.is_empty() {
+            return;
+        }
+
+        let new_task_index = {
+            if self.todo.is_empty() {
+                0
+            } else {
+                match self.todo_list_state.selected() {
+                    Some(i) => std::cmp::min(i + 1, self.todo.get_incomplete_tasks().len()),
+                    None => self.todo.len(),
+                }
+            }
+        };
+        self.todo_list_state.select(Some(new_task_index));
+        self.todo.add_task(new_task_index, self.yank_buffer.clone());
     }
 
     pub fn navigate_down(&mut self) {
@@ -149,6 +245,10 @@ impl App {
 
     pub fn get_incomplete_tasks(&self) -> &Vec<String> {
         self.todo.get_incomplete_tasks()
+    }
+
+    pub fn get_mode(&self) -> AppMode {
+        self.mode
     }
 
     fn select_last_task(&mut self) {
