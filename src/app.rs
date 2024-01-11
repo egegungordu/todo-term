@@ -156,10 +156,6 @@ impl App {
     }
 
     pub fn paste_task_above(&mut self) {
-        if self.yank_buffer.is_empty() {
-            return;
-        }
-
         let new_task_index = {
             if self.todo.is_empty() {
                 0
