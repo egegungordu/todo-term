@@ -123,8 +123,6 @@ impl App {
     }
 
     pub fn exit_insert_mode(&mut self) {
-        self.action_display.set("Saving todo");
-
         self.mode = AppMode::Visual;
     }
 
