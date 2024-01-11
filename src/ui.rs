@@ -44,7 +44,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     draw_calendar(frame, sidebar_area);
 
     if app.is_todo_empty() {
-        draw_empty_list(frame, content_area);
+        draw_empty_content(frame, content_area);
     } else {
         draw_list(frame, app, content_area);
     }
@@ -284,7 +284,7 @@ fn get_random_face() -> String {
     FACES[index].to_string()
 }
 
-fn draw_empty_list(f: &mut Frame, area: Rect) {
+fn draw_empty_content(f: &mut Frame, area: Rect) {
     let text = vec![
         "No tasks for today! 🎉",
         "",
