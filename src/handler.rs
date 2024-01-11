@@ -81,14 +81,14 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             app.add_task_below();
             app.enter_insert_mode();
         }
-        n_key_press!(KeyCode::Char('O')) => {
+        n_key_press!(KeyCode::Char('O'), KeyModifiers::SHIFT) => {
             app.add_task_above();
             app.enter_insert_mode();
         }
         n_key_press!(KeyCode::Char('x')) => {
             app.toggle_task();
         }
-        n_key_press!(KeyCode::Char('G')) => {
+        n_key_press!(KeyCode::Char('G'), KeyModifiers::SHIFT) => {
             app.navigate_bottom();
         }
         n_key_press!(KeyCode::Char('d')) => {
@@ -107,7 +107,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         n_key_press!(KeyCode::Char('p')) => {
             app.paste_task_below();
         }
-        n_key_press!(KeyCode::Char('P')) => {
+        n_key_press!(KeyCode::Char('P'), KeyModifiers::SHIFT) => {
             app.paste_task_above();
         }
         i_key_press!(KeyCode::Char('c') | KeyCode::Char('C'), KeyModifiers::CONTROL) => {
