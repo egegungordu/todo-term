@@ -128,6 +128,10 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         i_key_press!(KeyCode::Backspace) => {
             app.pop_from_task();
         }
+        i_key_press!(KeyCode::Enter) => {
+            app.save();
+            app.add_task_below();
+        }
         _ => {}
     }
     Ok(())
